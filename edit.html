@@ -1,0 +1,109 @@
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html;charset=UTF-8" />
+	<title>Word Total Frequency</title>
+	<script type="text/javascript" src="jquery-1.6.2.min.js"></script>
+	<script type="text/javascript" src="jquery.tmpl.js"></script>
+	<link href="style.css" rel="stylesheet" type="text/css" />
+</head>
+<script>
+	function gup(name)
+	{
+	  var regexS = "[\\?&]"+name+"=([^&#]*)";
+	  var regex = new RegExp( regexS );
+	  var tmpURL = window.location.href;
+	  var results = regex.exec( tmpURL );
+	  if( results == null )
+		return "";
+	  else
+		return results[1];
+	}
+	
+	$(document).ready(function(){
+		var page = gup('page') || 1;
+		$.getJSON('get.php?page='+page, function(json){
+			$('#wordTemplate').tmpl(json.rows).appendTo('#wordTable');
+			$('tr:even', '#wordTable').css('background-color', '#eee')
+		});
+		
+		$('#previous-page').click(function(){
+			var page = parseInt(gup('page') || 1);
+			if (page > 1){
+				--page;
+				var url = location.href;
+				if (url.indexOf('?') > -1)
+					url = url.substr(0, url.indexOf('?'));
+				location.href = url + '?page=' + page;
+			}
+		});
+		
+		$('#next-page').click(function(){
+			var page = parseInt(gup('page') || 1);
+			if (page){
+				++page;
+				var url = location.href;
+				if (url.indexOf('?') > -1)
+					url = url.substr(0, url.indexOf('?'));
+				location.href = url + '?page=' + page;
+			}
+		});
+		
+		$('#wordTable').delegate('.btn-json', 'click', function(){
+		});
+		
+		$('#wordTable').delegate('.btn-save', 'click', function(){
+			var tr = $(this).parents('tr');
+			var data = {};
+			data['id']			= $('.id', tr).val();
+			data['spell']		= $('.spell', tr).val();
+			data['phonetic']	= $('.phonetic', tr).val();
+			data['frequency']	= $('.frequency', tr).val();
+			data['tags']		= $('.tags', tr).val();
+			data['category']	= $('.category', tr).val();
+			data['soundFile']	= $('.soundFile', tr).val();
+			data['translate']	= $('.translate', tr).val();
+			data['detail']		= $('.detail', tr).html().replace(/<br>/g, '\n');
+
+			$.ajax({
+			   type:'POST',
+			   url:'saveword.php',
+			   data: data,
+			   dataType: 'json',
+			   contentType:'application/x-www-form-urlencoded;charset=utf-8',
+			   timeout: 1000,
+			   success: function(msg){
+				 console.log('data saved for "' + msg.word + '"');
+			   },
+			   error: function(msg){
+				 console.log('[ERROR]: saving for "' + msg.word + '"');
+			   }
+			});
+		});
+	});
+</script>
+<style>
+</style>
+<body>
+<script id="wordTemplate" type="text/x-jquery-tmpl">
+	<tr>
+		<td>
+		<input type="hidden" class="id" value="${id}"/>
+		<input type="text" class="spell" value="${spell}"/>
+		<br/><input type="text" class="phonetic" value="${phonetic}"/>
+		<br/><input type="text" class="frequency" value="${frequency}"/>
+		<br/>tags: <input type="text" class="tags" value="${tags}"/>
+		<br/>category: <input type="text" class="category" value="${category}"/>
+		<br/><input type="text" class="soundFile" value="${soundFile}"/></td>
+		<td><input type="text" class="translate" value="${translate}"/>
+		<br/><div class="detail" contenteditable="true">${detail}</div></td>
+		<td><button class="btn-json">JSON</button><br/><br/><button class="btn-save">SAVE</button></td>
+	</tr>
+</script>
+<table id="wordTable"></table>
+<div id="navigator">
+	<button id="previous-page">Previous Page</button>
+	<br/><br/>
+	<button id="next-page">Next Page</button>
+</div>
+</body>
+</html>
