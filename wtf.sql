@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS `word` (
   `frequency` int(11) NOT NULL,
   `phonetic` varchar(50) DEFAULT NULL,
   `soundFile` varchar(255) DEFAULT NULL,
+  `reference` varchar(50) DEFAULT '',
   `translate` varchar(155) NOT NULL,
   `tags` varchar(50) DEFAULT '',
   `detail` text DEFAULT '',
