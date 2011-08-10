@@ -39,6 +39,8 @@ function callback(json){
 	var obj_entries = {};
 	
 	try{
+	data['prototype'] = json.primaries[0].terms[0].text;
+	
 	for (var i=0; i<json.primaries.length; i++){
 		// phonetic & sound file
 		var terms = json.primaries[i].terms;
@@ -54,8 +56,10 @@ function callback(json){
 		for (var j=0; j<entries.length; j++){
 			if (entries[j].type == 'meaning'){
 				for (var k=0; k<entries[j].terms.length; k++){
-					if (entries[j].terms[k].language == 'zh-Hans')
-						arr_detail.push(entries[j].terms[k].text);
+					if (entries[j].terms[k].language == 'zh-Hans'){
+						if (!obj_entries[TOP_MEANING]) obj_entries[TOP_MEANING] = [];
+						obj_entries[TOP_MEANING].push(entries[j].terms[k].text);
+					}
 				}
 			}
 			else if (entries[j].type == 'related' && entries[j].labels[0].text == 'See also:'){
@@ -101,12 +105,16 @@ function callback(json){
 	data['reference'] = arr_reference.join(' ');
 	
 	for (var key in obj_entries){
-		arr_detail.push(key);
+		if (arr_detail.length > 0) arr_detail.push('\n');
+		
+		if (key != TOP_MEANING)
+			arr_detail.push(key+'\n');
+		
 		for (var i=0; i<obj_entries[key].length; i++)
-			arr_detail.push(obj_entries[key][i]);
+			arr_detail.push(obj_entries[key][i]+'\n');
 	}
 	data['translate'] = arr_detail.length>1 ? arr_detail[1] : arr_detail[0];
-	data['detail'] = arr_detail.join('\n');
+	data['detail'] = arr_detail.join('');
 	data['json'] = JSON.stringify(json);
 
 	$.ajax({
@@ -143,9 +151,10 @@ function pause(millis)
 }
 
 var words = [], counts = [];
-var currentIndex = -1;
-var currentSection = 0;
+var currentIndex = 115;
+var currentSection = 11;
 var stopCrawling = false;
+var TOP_MEANING = 'TOP_MEANING';
 
 function getNextWord(){
 	if (stopCrawling) return;

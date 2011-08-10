@@ -13,6 +13,7 @@ if ($_REQUEST['spell'] != ''){
 	
 	// wtf table
 	$spell		= htmlentities($_REQUEST['spell']);
+	$prototype		= htmlentities($_REQUEST['prototype']);
 	$frequency	= mysql_real_escape_string($_REQUEST['frequency']);
 	$phonetic	= mysql_real_escape_string($_REQUEST['phonetic']);
 	$soundFile	= mysql_real_escape_string($_REQUEST['soundFile']);
@@ -22,7 +23,7 @@ if ($_REQUEST['spell'] != ''){
 	$json		= mysql_real_escape_string($_REQUEST['json']);
 	$obj->word = $spell;
 	
-	$sql	= "INSERT INTO word (spell, frequency, phonetic, translate, soundFile, reference, detail, json, store_date) VALUES('$spell', $frequency, '$phonetic', '$translate', '$soundFile', '$reference', '$detail', '$json', NOW())";
+	$sql	= "INSERT INTO word (spell, prototype, frequency, phonetic, translate, soundFile, reference, detail, json, store_date) VALUES('$spell', '$prototype', $frequency, '$phonetic', '$translate', '$soundFile', '$reference', '$detail', '$json', NOW())";
 	mysql_query($sql);
 
 	$obj->ok = 1;

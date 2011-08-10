@@ -30,6 +30,7 @@ DROP TABLE IF EXISTS `word`;
 CREATE TABLE IF NOT EXISTS `word` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `spell` varchar(50) NOT NULL,
+  `prototype` varchar(50) NOT NULL,
   `frequency` int(11) NOT NULL,
   `phonetic` varchar(50) DEFAULT NULL,
   `soundFile` varchar(255) DEFAULT NULL,
