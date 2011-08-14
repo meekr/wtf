@@ -13,7 +13,6 @@ table, caption, tbody, tfoot, thead, tr, th, td {
     border: 0;
     outline: 0;
     font-size: 100%;
-    vertical-align: baseline;
     background: transparent;
 }
 body {
@@ -63,13 +62,21 @@ table {
 	margin-bottom:5px;
 	width:200px;
 }
-#wordTable input.tags{width:169px;}
-#wordTable input.category{width:140px;}
+span.label{
+	display:inline-block;
+	width:75px;
+}
+#wordTable input.tags,
+#wordTable input.frequency,
+#wordTable input.phonetic,
+#wordTable input.category,
+#wordTable input.reference,
+#wordTable input.prototype{width:125px;}
 #wordTable input.translate{width:400px;}
 #wordTable .detail{
 	background-color:#fff;
 	border:1px solid #ccc;
-	min-height:108px;
+	min-height:152px;
 	height:auto;
 	width:400px;
 	white-space:pre-wrap; /* css-3 */
@@ -89,4 +96,20 @@ table {
 }
 textarea.detail{
 	font-size:12px;
+}
+
+/************* jquery audio player ******************/
+div.jp-audio{
+	width:320px;
+}
+div.jp-type-playlist div.jp-playlist li{
+	font-size:12px;
+	position:relative;
+}
+img.img-delete-sound{
+	position:absolute;
+	top:6px;
+	right:0;
+	width:16px;
+	height:16px;
 }

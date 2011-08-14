@@ -25,7 +25,7 @@ if( $count >0 ) {
 if (!$page) $page = 1;
 if ($page > $total_pages) $page=$total_pages;
 $start = $limit*$page - $limit; // do not put $limit*($page - 1)
-$SQL = "SELECT id, spell, frequency, phonetic, soundFile, translate, tags, detail, category, json FROM word LIMIT $start , $limit";
+$SQL = "SELECT id, spell, prototype, reference, frequency, phonetic, soundFile, translate, tags, detail, category, json FROM word ORDER BY spell, frequency DESC LIMIT $start , $limit";
 $result = mysql_query( $SQL ) or die("Couldn t execute query.".mysql_error());
 
 $responce->page = $page;
@@ -35,6 +35,8 @@ $i=0;
 while($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
     $responce->rows[$i]['id'] = $row[id];
     $responce->rows[$i]['spell'] = $row[spell];
+    $responce->rows[$i]['prototype'] = $row[prototype];
+    $responce->rows[$i]['reference'] = $row[reference];
     $responce->rows[$i]['frequency'] = $row[frequency];
     $responce->rows[$i]['phonetic'] = $row[phonetic];
     $responce->rows[$i]['soundFile'] = $row[soundFile];

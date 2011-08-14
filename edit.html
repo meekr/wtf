@@ -4,9 +4,153 @@
 	<title>Word Total Frequency</title>
 	<script type="text/javascript" src="jquery-1.6.2.min.js"></script>
 	<script type="text/javascript" src="jquery.tmpl.js"></script>
+	<script type="text/javascript" src="jplayer/jquery.jplayer.min.js"></script>
+	<link href="jplayer/skin/jplayer.blue.monday.css" rel="stylesheet" type="text/css" />
 	<link href="style.css" rel="stylesheet" type="text/css" />
 </head>
 <script>
+	var Playlist = function(instance, playlist, options) {
+		var self = this;
+
+		this.instance = instance; // String: To associate specific HTML with this playlist
+		this.playlist = playlist; // Array of Objects: The playlist
+		this.options = options; // Object: The jPlayer constructor options for this playlist
+
+		this.current = 0;
+
+		this.cssId = {
+			jPlayer: "jquery_jplayer_",
+			interface: "jp_interface_",
+			playlist: "jp_playlist_"
+		};
+		this.cssSelector = {};
+
+		$.each(this.cssId, function(entity, id) {
+			self.cssSelector[entity] = "#" + id + self.instance;
+		});
+
+		if(!this.options.cssSelectorAncestor) {
+			this.options.cssSelectorAncestor = this.cssSelector.interface;
+		}
+
+		$(this.cssSelector.jPlayer).jPlayer(this.options);
+
+		$(this.cssSelector.interface + " .jp-previous").click(function() {
+			self.playlistPrev();
+			$(this).blur();
+			return false;
+		});
+
+		$(this.cssSelector.interface + " .jp-next").click(function() {
+			self.playlistNext();
+			$(this).blur();
+			return false;
+		});
+	};
+
+	Playlist.prototype = {
+		displayPlaylist: function() {
+			var self = this;
+			$(this.cssSelector.playlist + " ul").empty();
+			for (i=0; i < this.playlist.length; i++) {
+				var listItem = (i === this.playlist.length-1) ? "<li class='jp-playlist-last' " : "<li ";
+				listItem += "file='" + this.playlist[i].mp3+"'>";
+
+				listItem += "<a href='#' id='" + this.cssId.playlist + this.instance + "_item_" + i +"' tabindex='1'>" + this.playlist[i].name
+				if (this.playlist.length > 1)
+					listItem +=  "<img class='img-delete-sound' src='jplayer/delete.png' title='删除这个发音' onclick='return removeSound(this);'/>"
+				listItem += "</a>";
+
+				// Create links to free media
+				if(this.playlist[i].free) {
+					var first = true;
+					listItem += "<div class='jp-free-media'>(";
+					$.each(this.playlist[i], function(property,value) {
+						if($.jPlayer.prototype.format[property]) { // Check property is a media format.
+							if(first) {
+								first = false;
+							} else {
+								listItem += " | ";
+							}
+							listItem += "<a id='" + self.cssId.playlist + self.instance + "_item_" + i + "_" + property + "' href='" + value + "' tabindex='1'>" + property + "</a>";
+						}
+					});
+					listItem += ")</span>";
+				}
+
+				listItem += "</li>";
+
+				// Associate playlist items with their media
+				$(this.cssSelector.playlist + " ul").append(listItem);
+				$(this.cssSelector.playlist + "_item_" + i).data("index", i).click(function() {
+					var index = $(this).data("index");
+					if(self.current !== index) {
+						self.playlistChange(index);
+					} else {
+						$(self.cssSelector.jPlayer).jPlayer("play");
+					}
+					$(this).blur();
+					return false;
+				});
+
+				// Disable free media links to force access via right click
+				if(this.playlist[i].free) {
+					$.each(this.playlist[i], function(property,value) {
+						if($.jPlayer.prototype.format[property]) { // Check property is a media format.
+							$(self.cssSelector.playlist + "_item_" + i + "_" + property).data("index", i).click(function() {
+								var index = $(this).data("index");
+								$(self.cssSelector.playlist + "_item_" + index).click();
+								$(this).blur();
+								return false;
+							});
+						}
+					});
+				}
+			}
+		},
+		playlistInit: function(autoplay) {
+			if(autoplay) {
+				this.playlistChange(this.current);
+			} else {
+				this.playlistConfig(this.current);
+			}
+		},
+		playlistConfig: function(index) {
+			$(this.cssSelector.playlist + "_item_" + this.current).removeClass("jp-playlist-current").parent().removeClass("jp-playlist-current");
+			$(this.cssSelector.playlist + "_item_" + index).addClass("jp-playlist-current").parent().addClass("jp-playlist-current");
+			this.current = index;
+			$(this.cssSelector.jPlayer).jPlayer("setMedia", this.playlist[this.current]);
+		},
+		playlistChange: function(index) {
+			this.playlistConfig(index);
+			$(this.cssSelector.jPlayer).jPlayer("play");
+		},
+		playlistNext: function() {
+			var index = (this.current + 1 < this.playlist.length) ? this.current + 1 : 0;
+			this.playlistChange(index);
+		},
+		playlistPrev: function() {
+			var index = (this.current - 1 >= 0) ? this.current - 1 : this.playlist.length - 1;
+			this.playlistChange(index);
+		}
+	};
+	
+	function removeSound(elm){
+		var tr = $(elm).parents('tr');
+		var ul = $(elm).parents('ul');
+		var li = $(elm).parents('li');
+		var b = confirm("你确认要删除发音\"" + li.text() + "\"吗？");
+		if (b){
+			li.remove();
+			var files = [];
+			$.each(ul.find('li'), function(idx, el){
+				files.push($(el).attr('file'));
+			});
+			$('.soundFile', tr).val(files.join(' '));
+		}
+		return false;
+	}
+	
 	function gup(name)
 	{
 	  var regexS = "[\\?&]"+name+"=([^&#]*)";
@@ -20,10 +164,40 @@
 	}
 	
 	$(document).ready(function(){
+		
 		var page = gup('page') || 1;
 		$.getJSON('get.php?page='+page, function(json){
 			$('#wordTemplate').tmpl(json.rows).appendTo('#wordTable');
 			$('tr:even', '#wordTable').css('background-color', '#eee')
+			
+			$.each($('#wordTable tr'), function(idx, tr){
+				var id = $('.id', tr).val();
+				var files = $('.soundFile', tr).val().split(' ');
+				var mp3s = [];
+				$.each(files, function(idx, file){
+					var parts = file.split('/');
+					var name = parts[parts.length-1];
+					mp3s.push({
+						name:name,
+						mp3:file
+					});
+				});
+				
+				var audioPlaylist = new Playlist(id, mp3s, {
+					ready: function() {
+						audioPlaylist.displayPlaylist();
+						audioPlaylist.playlistInit(false); // Parameter is a boolean for autoplay.
+					},
+					ended: function() {
+						//audioPlaylist.playlistNext();
+					},
+					play: function() {
+						$(this).jPlayer("pauseOthers");
+					},
+					swfPath: "jplayer",
+					supplied: "mp3"
+				});
+			});
 		});
 		
 		$('#previous-page').click(function(){
@@ -54,8 +228,10 @@
 		$('#wordTable').delegate('.btn-save', 'click', function(){
 			var tr = $(this).parents('tr');
 			var data = {};
+			data['action']		= 'update';
 			data['id']			= $('.id', tr).val();
 			data['spell']		= $('.spell', tr).val();
+			data['prototype']	= $('.prototype', tr).val();
 			data['phonetic']	= $('.phonetic', tr).val();
 			data['frequency']	= $('.frequency', tr).val();
 			data['tags']		= $('.tags', tr).val();
@@ -79,6 +255,28 @@
 			   }
 			});
 		});
+		
+		$('#wordTable').delegate('.btn-delete', 'click', function(){
+			var tr = $(this).parents('tr');
+			var b = confirm("你确认要删除单词\"" + $('.spell', tr).val() + "\"吗？");
+			if (b){
+				var data = {};
+				data['action']		= 'delete';
+				data['id']			= $('.id', tr).val();
+	
+				$.ajax({
+				   type:'POST',
+				   url:'saveword.php',
+				   data: data,
+				   dataType: 'json',
+				   contentType:'application/x-www-form-urlencoded;charset=utf-8',
+				   timeout: 1000,
+				   success: function(msg){
+					 location.reload();
+				   }
+				});
+			}
+		});
 	});
 </script>
 <style>
@@ -86,19 +284,58 @@
 <body>
 <script id="wordTemplate" type="text/x-jquery-tmpl">
 	<tr>
+		<td valign="top">
+			<input type="hidden" class="id" value="${id}"/>
+			<input type="text" class="spell" value="${spell}"/>
+			<br/><span class="label">原型：</span><input type="text" class="prototype" value="${prototype}"/>
+			<br/><span class="label">参看：</span><input type="text" class="reference" value="${reference}"/>
+			<br/><span class="label">音标：</span><input type="text" class="phonetic" value="${phonetic}"/>
+			<br/><span class="label">出现频率：</span><input type="text" class="frequency" value="${frequency}"/>
+			<br/><span class="label">标签：</span><input type="text" class="tags" value="${tags}"/>
+			<br/><span class="label">单词集(0-4)：</span><input type="text" class="category" value="${category}"/>
+			<br/><input type="text" class="soundFile" value="${soundFile}"/>
+		</td>
+		<td valign="top">
+			<div id="jquery_jplayer_${id}" class="jp-jplayer"></div>
+			<div class="jp-audio">
+				<div class="jp-type-playlist">
+					<div id="jp_interface_${id}" class="jp-interface">
+						<ul class="jp-controls">
+							<li><a href="#" class="jp-play" tabindex="1">play</a></li>
+							<li><a href="#" class="jp-pause" tabindex="1">pause</a></li>
+							<li><a href="#" class="jp-stop" tabindex="1">stop</a></li>
+							<li><a href="#" class="jp-mute" tabindex="1">mute</a></li>
+							<li><a href="#" class="jp-unmute" tabindex="1">unmute</a></li>
+							<li><a href="#" class="jp-previous" tabindex="1">previous</a></li>
+							<li><a href="#" class="jp-next" tabindex="1">next</a></li>
+						</ul>
+						<div class="jp-progress">
+							<div class="jp-seek-bar">
+								<div class="jp-play-bar"></div>
+							</div>
+						</div>
+					</div>
+					<div id="jp_playlist_${id}" class="jp-playlist">
+						<ul>
+							<!-- The method Playlist.displayPlaylist() uses this unordered list -->
+							<li></li>
+						</ul>
+					</div>
+				</div>
+			</div>
+		</td>
 		<td>
-		<input type="hidden" class="id" value="${id}"/>
-		<input type="text" class="spell" value="${spell}"/>
-		<br/><input type="text" class="phonetic" value="${phonetic}"/>
-		<br/><input type="text" class="frequency" value="${frequency}"/>
-		<br/>tags: <input type="text" class="tags" value="${tags}"/>
-		<br/>category: <input type="text" class="category" value="${category}"/>
-		<br/><input type="text" class="soundFile" value="${soundFile}"/></td>
-		<td><input type="text" class="translate" value="${translate}"/>
-		<br/><div class="detail" contenteditable="true">${detail}</div></td>
-		<td><button class="btn-json">JSON</button><br/><br/><button class="btn-save">SAVE</button></td>
+			<input type="text" class="translate" value="${translate}"/>
+			<br/><div class="detail" contenteditable="true">${detail}</div>
+		</td>
+		<td valign="top">
+			<button class="btn-json">JSON</button>
+			<br/><br/><button class="btn-save">SAVE</button>
+			<br/><br/><button class="btn-delete">DELETE</button>
+		</td>
 	</tr>
 </script>
+
 <table id="wordTable"></table>
 <div id="navigator">
 	<button id="previous-page">Previous Page</button>

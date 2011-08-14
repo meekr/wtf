@@ -1,3 +1,23 @@
+--select * from word where spell <> prototype and prototype <> '' order by prototype
+--update word set spell = prototype where spell <> prototype and prototype <> '' order by prototype
+--select sum(frequency), spell from word group by spell
+/*
+UPDATE
+    word AS w
+    LEFT JOIN (
+        SELECT
+            SUM(frequency) AS total,
+            spell
+        FROM
+            word
+        GROUP BY
+            spell
+    ) AS m ON
+        m.spell = w.spell
+SET
+    w.frequency = m.total
+*/
+
 -- phpMyAdmin SQL Dump
 -- version 3.2.4
 -- http://www.phpmyadmin.net
