@@ -29,8 +29,7 @@ JSON.stringify = JSON.stringify || function (obj) {
     }
 };
 
-
-function callback(json){
+function getDataFromJson(json){
 	var data = {};
 	data['spell'] = json.query;
 	data['frequency'] = counts[currentIndex];
@@ -51,7 +50,9 @@ function callback(json){
 				arr_sound.push(terms[j].text);
 		}
 		
-		// entries
+		/***************
+		 ** entries ****
+		 **************/
 		var entries = json.primaries[i].entries;
 		for (var j=0; j<entries.length; j++){
 			if (entries[j].type == 'meaning'){
@@ -62,7 +63,7 @@ function callback(json){
 					}
 				}
 			}
-			else if (entries[j].type == 'related' && entries[j].labels[0].text == 'See also:'){
+			else if (entries[j].type == 'related' && entries[j].labels && entries[j].labels[0].text == 'See also:'){
 				arr_reference.push(entries[j].terms[0].reference);
 			}
 			else if (entries[j].type == 'container' && entries[j].labels[0].title == 'Part-of-Speech'){
@@ -94,9 +95,54 @@ function callback(json){
 			}
 		}
 	}
+	
+	/***************************************
+	 ** force delve into deeper entries ****
+	 **************************************/
+	if (arr_phonetic.length == 0 || arr_sound.length == 0){
+		for (var i=0; i<json.primaries.length; i++){
+			// phonetic & sound file
+			var entries = json.primaries[i].entries;
+			for (var j=0; j<entries.length; j++){
+				var terms = entries[j].terms;
+				if (terms){
+					for (var k=0; k<terms.length; k++){
+						if (terms[k].type == 'phonetic')
+							arr_phonetic.push(terms[k].text);
+						if (terms[k].type == 'sound')
+							arr_sound.push(terms[k].text);
+					}
+				}
+			}
+		}
+	}
+	
+	if (arr_phonetic.length == 0 || arr_sound.length == 0){
+		for (var i=0; i<json.primaries.length; i++){
+			// phonetic & sound file
+			var entries = json.primaries[i].entries;
+			for (var j=0; j<entries.length; j++){
+				var entries2 = entries[j].entries;
+				if (entries2){
+					for (var k=0; k<entries2.length; k++){
+						var terms = entries2[k].terms;
+						if (terms){
+							for (var l=0; l<terms.length; l++){
+								if (terms[l].type == 'phonetic')
+									arr_phonetic.push(terms[l].text);
+								if (terms[l].type == 'sound')
+									arr_sound.push(terms[l].text);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	
 	}
 	catch(msg){
-		console.log("XXXX--: "+msg);
+		console.log("XXXX--: "+msg+" @"+msg.number);
 		pause(500);
 	}
 	
@@ -116,6 +162,11 @@ function callback(json){
 	data['translate'] = arr_detail.length>1 ? arr_detail[1] : arr_detail[0];
 	data['detail'] = arr_detail.join('');
 	data['json'] = JSON.stringify(json);
+	return data;
+}
+
+function callback(json){
+	var data = getDataFromJson(json);
 
 	$.ajax({
 	   type:'POST',
@@ -240,6 +291,13 @@ $(function(){
 				console.log('asdfasf');
 			});
 		});
+		
+		$('#btn-query').click(function(){
+			var url = 'http://www.google.com/dictionary/json?callback=getDataFromJson&sl=en&tl=zh&restrict=pr%2Cde&client=te&jsoncallback=?&q=' + $('#query').val();
+			$.getJSON(url, function(json){
+				// do nothing
+			});
+		});
 	});
 
 });
@@ -266,5 +324,7 @@ Array.prototype.unique = function() {
 	<button id="btn-crawl">Start Crawl</button>&nbsp;&nbsp;<button id="btn-stop-crawl">Stop</button>
 	<p></p>
 	<button id="btn-getpage">Get Page Json</button>
+	<p></p><p></p>
+	<input type="text" id="query"><button id="btn-query">Query</button>
 </body>
 </html>
