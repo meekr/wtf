@@ -66,7 +66,7 @@ span.label{
 	display:inline-block;
 	width:75px;
 }
-#wordTable input.tags,
+
 #wordTable input.frequency,
 #wordTable input.phonetic,
 #wordTable input.category,
@@ -96,6 +96,25 @@ span.label{
 }
 textarea.detail{
 	font-size:12px;
+}
+
+
+.tags-container{
+	display:inline-block;
+	font-size:12px;
+	margin-bottom:5px;
+}
+#wordTable .taglist{
+	background-color:#fff;
+	background-image:none;
+	border:1px solid #ccc;
+	font-size:12px;
+	margin-bottom:5px;
+	width:314px;
+}
+#wordTable .taglist input{
+	border:0;
+	width:10px;
 }
 
 /************* jquery audio player ******************/

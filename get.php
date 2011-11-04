@@ -2,7 +2,7 @@
 mb_internal_encoding('utf-8');
 
 $page = $_GET['page'];
-$limit = 20;
+$limit = 5;
 // connect to the database
 if (!mysql_connect('localhost', 'root', ''))
 {
@@ -25,7 +25,8 @@ if( $count >0 ) {
 if (!$page) $page = 1;
 if ($page > $total_pages) $page=$total_pages;
 $start = $limit*$page - $limit; // do not put $limit*($page - 1)
-$SQL = "SELECT id, spell, prototype, reference, frequency, phonetic, soundFile, translate, tags, detail, category, json FROM word ORDER BY spell, frequency DESC LIMIT $start , $limit";
+//$SQL = "SELECT id, spell, prototype, reference, frequency, phonetic, soundFile, translate, tags, detail, category, json FROM word ORDER BY spell, frequency DESC LIMIT $start , $limit";
+$SQL = "SELECT * FROM word ORDER BY category, frequency DESC LIMIT $start , $limit";
 $result = mysql_query( $SQL ) or die("Couldn t execute query.".mysql_error());
 
 $responce->page = $page;
