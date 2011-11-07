@@ -172,6 +172,10 @@
 		$('tr[dirty] .btn-save').click();
 	}
 	
+	$(window).unload(function(){
+		batchSave();
+	});
+	
 	$(document).ready(function(){
 		// automatic save every 3 secs
 		setInterval(batchSave, 3000);
